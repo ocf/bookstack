@@ -77,7 +77,7 @@ spec:
         - name: SAML2_DISPLAY_NAME_ATTRIBUTES
           value: username
         - name: SAML2_IDP_ENTITYID
-          value: <%= saml_entityid %>
+          value: "https://auth.ocf.berkeley.edu/auth/realms/ocf/protocol/saml/descriptor"
         - name: SAML2_AUTOLOAD_METADATA
           value: true
         image: solidnerd/bookstack:latest
