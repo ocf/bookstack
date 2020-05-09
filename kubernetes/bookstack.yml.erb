@@ -66,6 +66,20 @@ spec:
           value: <%= smtp_email_bookstack %>
         - name: APP_URL
           value: https://bookstack.ocf.berkeley.edu/
+        - name: AUTH_METHOD
+          value: saml2
+        - name: SAML2_NAME
+          value: OCF
+        - name: SAML2_EMAIL_ATTRIBUTE
+          value: email
+        - name: SAML2_EXTERNAL_ID_ATTRIBUTE
+          value: uid
+        - name: SAML2_DISPLAY_NAME_ATTRIBUTES
+          value: username
+        - name: SAML2_IDP_ENTITYID
+          value: <%= saml_entityid %>
+        - name: SAML2_AUTOLOAD_METADATA
+          value: true
         image: solidnerd/bookstack:latest
         name: bookstack
         readinessProbe:
