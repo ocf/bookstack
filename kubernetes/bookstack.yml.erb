@@ -1,3 +1,55 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    service: mysql
+  name: mysql
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        service: mysql
+    spec:
+      containers:
+      - env:
+        - name: MYSQL_DATABASE
+          value: bookstack
+        - name: MYSQL_PASSWORD
+          value: <%= taiga_mysql_pw %>
+        - name: MYSQL_ROOT_PASSWORD
+          value: <%= taiga_mysql_root %>
+        - name: MYSQL_USER
+          value: bookstack
+        image: mysql:5.7
+        name: mysql
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+          - name: vol
+            mountPath: /var/lib/mysql
+      volumes:
+      - name: vol
+        persistentVolumeClaim:
+          claimName: bookstack-vol
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: mysql
+  name: mysql
+spec:
+  type: NodePort
+  ports:
+  - name: "3306"
+    port: 3306
+    targetPort: 3306
+  selector:
+    service: mysql
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,7 +61,7 @@ spec:
   ports:
   - port: 80
     protocol: TCP
-    targetPort: 80
+    targetPort: 8080
   selector:
     app: bookstack
 ---
@@ -43,19 +95,19 @@ spec:
             fieldRef:
               fieldPath: spec.nodeName
         - name: DB_DATABASE
-          value: <%= mysql_db_bookstack %>
+          value: bookstack
         - name: DB_HOST
-          value: <%= mysql_host %>
+          value: mysql
         - name: DB_PASSWORD
-          value: <%= mysql_password %>
+          value: <%= taiga_mysql_pw %>
         - name: DB_USERNAME
-          value: <%= mysql_user_bookstack %>
+          value: bookstack
         - name: MAIL_USERNAME
-          value: <%= smtp_email_bookstack %>
+          value: bookstack@ocf.berkeley.edu
         - name: MAIL_PASSWORD 
-          value: <%= smtp_password_bookstack %>
+          value: <%= taiga_smtp_pw %>
         - name: MAIL_HOST
-          value: <% smtp_server %>
+          value: smtp.ocf.berkeley.edu
         - name: MAIL_PORT
           value: '465'
         - name: MAIL_ENCRYPTION
@@ -63,9 +115,9 @@ spec:
         - name: MAIL_DRIVER
           value: smtp
         - name: MAIL_FROM
-          value: <%= smtp_email_bookstack %>
+          value: bookstack@ocf.berkeley.edu
         - name: APP_URL
-          value: https://bookstack.ocf.berkeley.edu/
+          value: https://bookstack.dev-kubernetes.ocf.berkeley.edu/
         - name: AUTH_METHOD
           value: saml2
         - name: SAML2_NAME
@@ -79,26 +131,32 @@ spec:
         - name: SAML2_IDP_ENTITYID
           value: "https://auth.ocf.berkeley.edu/auth/realms/ocf/protocol/saml/descriptor"
         - name: SAML2_AUTOLOAD_METADATA
-          value: true
+          value: "true"
+        - name: SAML2_DUMP_USER_DETAILS
+          value: "false"
+        - name: SAML2_USER_TO_GROUPS
+          value: "true"
+        - name: SAML2_GROUP_ATTRIBUTE
+          value: Role
         image: solidnerd/bookstack:latest
         name: bookstack
         readinessProbe:
           httpGet:
             path: /login
-            port: 80
+            port: 8080
           initialDelaySeconds: 5
           timeoutSeconds: 1
           periodSeconds: 15
         livenessProbe:
           httpGet:
             path: /login
-            port: 80
+            port: 8080
           initialDelaySeconds: 15
           timeoutSeconds: 1
-          periodSeconds: 15
+          periodSeconds: 60
         ports:
         - name: http
-          containerPort: 80
+          containerPort: 8080
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -108,9 +166,21 @@ metadata:
   name: vhost-ingress
 spec:
   rules:
-    - host: bookstack.ocf.berkeley.edu
+    - host: bookstack.dev-kubernetes.ocf.berkeley.edu
       http:
         paths:
           - backend:
               serviceName: bookstack
               servicePort: 80
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bookstack-vol
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 8Gi
+  storageClassName: managed-nfs-storage
