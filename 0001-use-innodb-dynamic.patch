@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Thu May 14 00:00:00 2010
+From: Nikhil Jha <njha@ocf.berkeley.edu>
+Date: Thu, 14 May 2020 07:00:00 -0700
+Subject: [PATCH] use innodb dynamic
+
+---
+ app/Config/database.php | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/app/Config/database.php b/app/Config/database.php
+index ed654ffb..dc8d2843 100644
+--- a/app/Config/database.php
++++ b/app/Config/database.php
+@@ -72,7 +72,7 @@ return [
+             'prefix'    => '',
+             'prefix_indexes' => true,
+             'strict'    => false,
+-            'engine' => null,
++            'engine' => 'InnoDB ROW_FORMAT=DYNAMIC',
+             'options' => extension_loaded('pdo_mysql') ? array_filter([
+                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+             ]) : [],
+-- 
+2.24.2 (Apple Git-127)
+
+

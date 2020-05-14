@@ -1,54 +1,3 @@
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  labels:
-    service: mysql
-  name: mysql
-spec:
-  replicas: 1
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        service: mysql
-    spec:
-      containers:
-      - env:
-        - name: MYSQL_DATABASE
-          value: bookstack
-        - name: MYSQL_PASSWORD
-          value: <%= taiga_mysql_pw %>
-        - name: MYSQL_ROOT_PASSWORD
-          value: <%= taiga_mysql_root %>
-        - name: MYSQL_USER
-          value: bookstack
-        image: mysql:5.7
-        name: mysql
-        ports:
-        - containerPort: 3306
-        volumeMounts:
-          - name: vol
-            mountPath: /var/lib/mysql
-      volumes:
-      - name: vol
-        persistentVolumeClaim:
-          claimName: bookstack-vol
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    service: mysql
-  name: mysql
-spec:
-  type: NodePort
-  ports:
-  - name: "3306"
-    port: 3306
-    targetPort: 3306
-  selector:
-    service: mysql
 ---
 apiVersion: v1
 kind: Service
@@ -95,17 +44,17 @@ spec:
             fieldRef:
               fieldPath: spec.nodeName
         - name: DB_DATABASE
-          value: bookstack
+          value: <%= bookstack_db_database %>
         - name: DB_HOST
-          value: mysql
+          value: mysql.ocf.berkeley.edu
         - name: DB_PASSWORD
-          value: <%= taiga_mysql_pw %>
+          value: <%= bookstack_db_password %>
         - name: DB_USERNAME
-          value: bookstack
+          value: <%= bookstack_db_username %>
         - name: MAIL_USERNAME
-          value: bookstack@ocf.berkeley.edu
+          value: <%= bookstack_mail_from %>
         - name: MAIL_PASSWORD 
-          value: <%= taiga_smtp_pw %>
+          value: <%= bookstack_mail_password %>
         - name: MAIL_HOST
           value: smtp.ocf.berkeley.edu
         - name: MAIL_PORT
@@ -115,9 +64,9 @@ spec:
         - name: MAIL_DRIVER
           value: smtp
         - name: MAIL_FROM
-          value: bookstack@ocf.berkeley.edu
+          value: <%= bookstack_mail_from %>
         - name: APP_URL
-          value: https://bookstack.dev-kubernetes.ocf.berkeley.edu/
+          value: https://help.ocf.berkeley.edu/
         - name: AUTH_METHOD
           value: saml2
         - name: SAML2_NAME
@@ -166,21 +115,9 @@ metadata:
   name: vhost-ingress
 spec:
   rules:
-    - host: bookstack.dev-kubernetes.ocf.berkeley.edu
+    - host: help.ocf.berkeley.edu
       http:
         paths:
           - backend:
               serviceName: bookstack
               servicePort: 80
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: bookstack-vol
-spec:
-  accessModes:
-  - ReadWriteMany
-  resources:
-    requests:
-      storage: 8Gi
-  storageClassName: managed-nfs-storage
